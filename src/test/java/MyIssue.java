@@ -141,10 +141,8 @@ public class MyIssue {
         RestAssured.baseURI = "http://soft.it-hillel.com.ua:8080";
         System.out.println(key + " first");
 
-//        if (key.isEmpty()){
-//            System.out.println("key is empty");
             createIssuePositive201();
-//        }
+
         System.out.println(key + " second");
 
         System.out.println("key=" +  key);
@@ -163,9 +161,7 @@ public class MyIssue {
     public void deleteGroupIssuePositive204(){
         RestAssured.baseURI = "http://soft.it-hillel.com.ua:8080";
 
-//        if (stringList.isEmpty()){
             FilterIssue();
-//        }
 
         System.out.println(stringList);
         for (String s : stringList) {
@@ -180,7 +176,6 @@ public class MyIssue {
                     statusCode(204);
         }
         }
-
 
 
     @Test
@@ -264,6 +259,155 @@ public class MyIssue {
 
     }
 
+
+    @Test
+    public void addVote(){
+        RestAssured.baseURI = "http://soft.it-hillel.com.ua:8080";
+
+        key = "QA-138";
+
+        Response response =
+                given().
+                        contentType("application/json").
+                        cookie("JSESSIONID=" + sessionID).
+                        post("/rest/api/2/issue/" + key + "/votes");
+
+        System.out.println(response.asString());
+        assertTrue(response.getStatusCode() == 204);
+
+    }
+
+
+    @Test
+    public void getVote(){
+        RestAssured.baseURI = "http://soft.it-hillel.com.ua:8080";
+
+        key = "QA-138";
+
+        Response response =
+                given().
+                        contentType("application/json").
+                        cookie("JSESSIONID=" + sessionID).
+                        get("/rest/api/2/issue/" + key + "/votes");
+
+        System.out.println(response.asString());
+        assertTrue(response.getStatusCode() == 200);
+        assertTrue(response.getBody().jsonPath().get("voters.displayName").toString().equals("[r.polunov]"));
+    }
+
+    @Test
+    public void remoteVote(){
+        RestAssured.baseURI = "http://soft.it-hillel.com.ua:8080";
+
+        key = "QA-138";
+
+        Response response =
+                given().
+                        contentType("application/json").
+                        cookie("JSESSIONID=" + sessionID).
+                        delete("/rest/api/2/issue/" + key + "/votes");
+
+        System.out.println(response.asString());
+        assertTrue(response.getStatusCode() == 204);
+    }
+
+    @Test
+    public void addComment201(){
+        RestAssured.baseURI = "http://soft.it-hillel.com.ua:8080";
+
+        key = "QA-1148";
+
+        Response response =
+                given().
+                        contentType("application/json").
+                        cookie("JSESSIONID=" + sessionID).
+                        body("{\n" +
+                                "    \"body\": \"new comment via API\"\n" +
+                                "}").
+                        post("/rest/api/2/issue/" + key + "/comment");
+
+        System.out.println(response.asString());
+        assertTrue(response.getStatusCode() == 201);
+    }
+
+    @Test
+    public void addComment400(){
+        RestAssured.baseURI = "http://soft.it-hillel.com.ua:8080";
+
+        key = "QA-1148";
+
+        Response response =
+                given().
+                        contentType("application/json").
+                        cookie("JSESSIONID=" + sessionID).
+                        body("{\n" +
+                                "    \"body1\": \"new comment via API\"\n" +
+                                "}").
+                        post("/rest/api/2/issue/" + key + "/comment");
+
+        System.out.println(response.asString());
+        assertTrue(response.getStatusCode() == 400);
+    }
+
+    @Test
+    public void getComment200(){
+        RestAssured.baseURI = "http://soft.it-hillel.com.ua:8080";
+
+        key = "QA-1148";
+
+        Response response =
+                given().
+                        contentType("application/json").
+                        cookie("JSESSIONID=" + sessionID).
+                        get("/rest/api/2/issue/" + key + "/comment");
+
+
+
+        stringList = from(response.asString()).getList("comments.id");
+
+        System.out.println(stringList.get(stringList.size()-1));
+
+        System.out.println(response.asString());
+        System.out.println(response.getBody().jsonPath().get("comments.body").toString());
+        System.out.println(response.getBody().jsonPath().get("comments.id").toString());
+        assertTrue(response.getStatusCode() == 200);
+    }
+
+    @Test
+    public void getComment404(){
+        RestAssured.baseURI = "http://soft.it-hillel.com.ua:8080";
+
+        key = "QA-9999999";
+
+        Response response =
+                given().
+                        contentType("application/json").
+                        cookie("JSESSIONID=" + sessionID).
+                        get("/rest/api/2/issue/" + key + "/comment");
+
+
+        System.out.println(response.asString());
+        assertTrue(response.getStatusCode() == 404);
+        assertTrue(response.getBody().jsonPath().get("errorMessages").toString().contains("Issue Does Not Exist"));
+    }
+
+    @Test
+    public void deleteComment204(){
+        RestAssured.baseURI = "http://soft.it-hillel.com.ua:8080";
+
+        key = "QA-1148";
+        getComment200();
+
+        Response response =
+                given().
+                        contentType("application/json").
+                        cookie("JSESSIONID=" + sessionID).
+                        delete("/rest/api/2/issue/" + key + "/comment/" + stringList.get(stringList.size()-1));
+
+
+//        System.out.println(response.getBody().jsonPath().get("comments.body").toString());
+        assertTrue(response.getStatusCode() == 204);
+    }
 
 //    @Test
 //    public void taskToSubTask2(){
