@@ -19,7 +19,7 @@ public class IssueHTTPS {
     public static String STUDIO_TOKEN;
 
 
-    @BeforeTest
+    @BeforeTest(groups = {"Issue", "comment", "search"})
     public void login(){
         utils.RequestSenderHTTPS requestSenderHTTPS = new utils.RequestSenderHTTPS();
         requestSenderHTTPS.authenticate();
