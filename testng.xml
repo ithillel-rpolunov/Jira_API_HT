@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--<!DOCTYPE suite SYSTEM "http://testng.org/testng-1.0.dtd" >-->
+
+<suite name="TestSute1">
+
+    <test name="Jira">
+
+
+        <groups>
+            <run>
+                <include name="Issue"/>
+                <include name="search"/>
+                <include name="comment"/>
+            </run>
+        </groups>
+
+        <classes>
+            <class name="IssueHTTPS"/>
+        </classes>
+
+    </test>
+
+
+</suite>

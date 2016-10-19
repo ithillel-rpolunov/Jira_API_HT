@@ -22,11 +22,11 @@
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
         <outputRelativeToContentRoot value="true" />
         <processorPath useClasspath="true" />
-        <module name="lr9" />
+        <module name="lr9_rest" />
       </profile>
     </annotationProcessing>
-    <bytecodeTargetLevel target="1.8">
-      <module name="lr9" target="1.5" />
+    <bytecodeTargetLevel>
+      <module name="lr9_rest" target="1.5" />
     </bytecodeTargetLevel>
   </component>
 </project>

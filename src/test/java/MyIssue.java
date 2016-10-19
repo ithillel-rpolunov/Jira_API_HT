@@ -1,11 +1,14 @@
+import apis.IssueAPI;
 import com.jayway.restassured.RestAssured;
 import com.jayway.restassured.response.Response;
-import org.testng.annotations.BeforeTest;
+import fixtures.JiraJSONFixture;
+import org.testng.Assert;
 import org.testng.annotations.Test;
 
 import java.util.List;
 
 import static com.jayway.restassured.RestAssured.given;
+import static com.thoughtworks.selenium.SeleneseTestNgHelper.assertEquals;
 import static io.restassured.path.json.JsonPath.from;
 import static org.testng.Assert.assertNotNull;
 import static org.testng.Assert.assertTrue;
@@ -13,84 +16,87 @@ import static org.testng.Assert.assertTrue;
 public class MyIssue {
 
 
-    String sessionID = "";
+    String  sessionID = "";
     String key = "";
     Response response;
+    JiraJSONFixture jiraJSONFixture = new JiraJSONFixture();
+
 
     List<String> stringList = null;
 
-    @BeforeTest
+//    @BeforeTest
+    @Test
     public void login(){
-        RestAssured.baseURI = "http://soft.it-hillel.com.ua:8080";
+        utils.RequestSender requestSender = new utils.RequestSender();
+        requestSender.authenticate();
+        sessionID = requestSender.extractResponseByPath("session.value");
 
-        String body1 = "{\n" +
-                "    \"username\": \"r.polunov\",\n" +
-                "    \"password\": \"docent05041983\"\n" +
-                "}";
-//        sessionID = given().
-//                contentType("application/json").
-//                body(body1).
-//                when().
-//                post("/rest/auth/1/session").
-//                then().
-//                statusCode(200).
-//                extract().
-//                path("session.value");
-
-//        System.out.println(sessionID);
-
-        Response response = given().
-                contentType("application/json").
-                body(body1).
-                when().
-                post("/rest/auth/1/session");
-
-        sessionID = response.getSessionId();
-
-        assertTrue(response.getStatusCode() == 200);
-        assertTrue(response.path("session") != null);
-        assertNotNull(response.path("session"));
+        //check
+        assertNotNull(sessionID);
+        assertTrue(String.valueOf(requestSender.response.getStatusCode()).equals("200"));
+//        assertNotNull(RequestSender.response.path("session"));
     }
+
+
+    @Test
+    public void createIssuePositive201_new2(){
+
+        JiraJSONFixture jiraJSONFixture = new JiraJSONFixture();
+        String issue = jiraJSONFixture.generateJSONForSampleIssue();
+
+        IssueAPI issueAPI = new IssueAPI();
+        issueAPI.createIsueHTTPS(issue);
+
+        assertEquals(issueAPI.response.getStatusCode(),201);
+        assertTrue(issueAPI.response.getBody().jsonPath().get("key").toString().contains("TES-"));
+        assertTrue(issueAPI.response.getBody().jsonPath().get("self").toString().contains("https://forapitest.atlassian.net"));
+    }
+
+    @Test
+    public void addCommentHTTPS(){
+        JiraJSONFixture jiraJSONFixture = new JiraJSONFixture();
+        String comment = jiraJSONFixture.generateJSONForCommentHTTPS();
+
+        IssueAPI issueAPI = new IssueAPI();
+        issueAPI.addCommentHTTPS(comment);
+
+        Assert.assertEquals(issueAPI.response.getStatusCode(),201);
+    }
+
+
 
     @Test
     public void createIssuePositive201(){
         RestAssured.baseURI = "http://soft.it-hillel.com.ua:8080";
 
-        String body1 = " {\n" +
-                "\n" +
-                " \"fields\": {\n" +
-                "  \"project\": {\n" +
-                "   \"id\": \"10315\"\n" +
-                "  },\n" +
-                "  \"summary\": \"rest_test\",\n" +
-                "  \"issuetype\": {\n" +
-                "   \"id\": \"10004\"\n" +
-                "  },\n" +
-                "  \"assignee\": {\n" +
-                "   \"name\": \"r.polunov\"\n" +
-                "  },\n" +
-                "  \"reporter\": {\n" +
-                "   \"name\": \"r.polunov\"\n" +
-                "  }\n" +
-                " }\n" +
-                "}";
-
-
-//        String response = given().
-//                contentType("application/json").
-//                cookie("JSESSIONID="+sessionID).
-//                body(body1).
-//                when().
-//                post("/rest/api/2/issue").
-//                then().
-//                statusCode(201).
-//                extract().
-//                path("key");
+        String sampleIssue = JiraJSONFixture.generateJSONForSampleIssue();
 
         Response response = given().
                 contentType("application/json").
                 cookie("JSESSIONID=" + sessionID).
-                body(body1).
+                body(sampleIssue).
+                when().
+                post("/rest/api/2/issue");
+
+        key = response.getBody().jsonPath().get("key");
+
+        assertTrue(response.getStatusCode() == 201);
+        assertTrue(response.getBody().jsonPath().get("key").toString().contains("QAAUT-"));
+        assertTrue(response.getBody().jsonPath().get("self").toString().contains("http://soft.it-hillel.com.ua:8080"));
+
+    }
+
+
+    @Test
+    public void createIssuePositive201_new(){
+        RestAssured.baseURI = "http://soft.it-hillel.com.ua:8080";
+
+        String sampleIssue = JiraJSONFixture.generateJSONForSampleIssue();
+
+        Response response = given().
+                contentType("application/json").
+                cookie("JSESSIONID=" + sessionID).
+                body(sampleIssue).
                 when().
                 post("/rest/api/2/issue");
 
@@ -216,10 +222,10 @@ public class MyIssue {
                 body("{\n" +
                         "    \"jql\": \"project = QAAUT and reporter = r.polunov\",\n" +
                         "    \"startAt\": 0,\n" +
-                        "    \"maxResults\": 3,\n" +
-                        "    \"fields\": [\n" +
-                        "        \"key\" \n" +
-                        "    ]\n" +
+                        "    \"maxResults\": 3\n" +
+//                        "    \"fields\": [\n" +
+//                        "        \"key\" \n" +
+//                        "    ]\n" +
                         "}").
                 post("/rest/api/2/search");
 
@@ -250,9 +256,9 @@ public class MyIssue {
                 body("{\"fields\":\n" +
                         "   {\"parent\":{\"id\":\"QAAUT-133\"},\n" +
                         "   \"project\":{\"id\":\"10315\"},\n" +
-                        "   \"issuetype\":{\"id\":\"10003\"}}\n" +
+                        "   \"issuetype\":{\"id\":\"10005\"}}\n" +
                         "}").
-                put("/rest/api/2/issue/QAAUT-255");
+                put("/rest/api/2/issue/QAAUT-251");
 
         System.out.println(response.asString());
         assertTrue(response.getStatusCode() == 204);
@@ -317,17 +323,26 @@ public class MyIssue {
 
         key = "QA-1148";
 
+        PaJson paJson = new PaJson();
+        String body = paJson.commentJSON("comment via JSONOBJECT");
+
         Response response =
                 given().
                         contentType("application/json").
                         cookie("JSESSIONID=" + sessionID).
-                        body("{\n" +
-                                "    \"body\": \"new comment via API\"\n" +
-                                "}").
+                        body(body).
+//                        body("{\n" +
+//                                "    \"body\": \"new comment via API\"\n" +
+//                                "}").
                         post("/rest/api/2/issue/" + key + "/comment");
+
+        String sresponce = response.asString();
+
+        paJson.parserJson(sresponce);
 
         System.out.println(response.asString());
         assertTrue(response.getStatusCode() == 201);
+
     }
 
     @Test
@@ -409,22 +424,71 @@ public class MyIssue {
         assertTrue(response.getStatusCode() == 204);
     }
 
-//    @Test
-//    public void taskToSubTask2(){
-//        RestAssured.baseURI = "http://soft.it-hillel.com.ua:8080";
-//
-//        Response response =
-//        given().
-//                contentType("application/json").
-//                cookie("JSESSIONID=" + sessionID).
-//                body("{\"fields\":\n" +
-//                        "   {\"parent\":{\"id\":\"QAAUT-133\"},\n" +
-//                        "   \"project\":{\"id\":\"10315\"},\n" +
-//                        "   \"issuetype\":{\"id\":\"10002\"}}\n" +
-//                        "}").
-//                get("/rest/api/2/issue/QAAUT-256/editmeta");
-//
-//        System.out.println(response.asString());
-//
-//    }
+    @Test
+    public void linkIssues201(){
+
+        RestAssured.baseURI = "http://soft.it-hillel.com.ua:8080";
+
+        response = given().
+                contentType("application/json").
+                cookie("JSESSIONID=" + sessionID).
+                body("{\n" +
+                        "    \"type\": {\n" +
+//                        "        \"name\": \"Relates\"\n" +
+//                        "        \"name\": \"Duplicate\"\n" +
+                        "        \"name\": \"Blocked\"\n" +
+                        "    },\n" +
+                        "    \"inwardIssue\": {\n" +
+                        "        \"key\": \"QAAUT-154\"\n" +
+                        "    },\n" +
+                        "    \"outwardIssue\": {\n" +
+                        "        \"key\": \"QAAUT-155\"\n" +
+                        "    },\n" +
+                        "    \"comment\": {\n" +
+                        "        \"body\": \"clones issue!\"\n" +
+                        "    }\n" +
+                        "}").
+                post("/rest/api/2/issueLink");
+
+
+        System.out.println(response.asString());
+        System.out.println(response.getStatusCode());
+    }
+
+    @Test
+    public void getIssueLink200(){
+
+        RestAssured.baseURI = "http://soft.it-hillel.com.ua:8080";
+
+        response = given().
+                contentType("application/json").
+                cookie("JSESSIONID=" + sessionID).
+                get("/rest/api/2/issueLink/13257");
+
+
+        System.out.println(response.asString());
+        System.out.println(response.getStatusCode());
+    }
+
+    @Test
+    public void taskToSubTask2(){
+        RestAssured.baseURI = "http://soft.it-hillel.com.ua:8080";
+
+        Response response =
+        given().
+                contentType("application/json").
+                cookie("JSESSIONID=" + sessionID).
+                body("{\"fields\":\n" +
+                        "   {\"parent\":{\"id\":\"QAAUT-133\"},\n" +
+                        "   \"project\":{\"id\":\"10315\"},\n" +
+                        "   \"issuetype\":{\"id\":\"10006\"}}\n" +
+                        "}").
+                get("/rest/api/2/issue/QAAUT-250/editmeta");
+
+        System.out.println(response.asString());
+
+    }
+
+
+
 }
